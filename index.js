@@ -14,7 +14,7 @@ var LOGGER = {info: console.log, error: console.error};
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.1.2
+  @version 1.1.3
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -68,6 +68,16 @@ Hubspot.prototype.getCompanyProperties = function(){
   return self._getEntities('Company Property', '/properties/v1/companies/properties', qs, false );
 
 };
+
+
+Hubspot.prototype.getCompanyProperty = function(name){
+  var self = this;
+  var endpoint = '/properties/v1/companies/properties/named/'+name;
+  var qs = {};
+  return self._getEntity('Company Property', endpoint, qs, false);
+
+};
+
 
 /**
   Create a company property

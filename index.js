@@ -14,7 +14,7 @@ var LOGGER = {info: console.log, error: console.error};
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.1.1
+  @version 1.1.2
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({

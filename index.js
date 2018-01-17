@@ -14,7 +14,7 @@ var LOGGER = {info: console.log, error: console.error};
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.1.0
+  @version 1.1.1
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -306,6 +306,9 @@ Hubspot.prototype._getEntity = function(entityName, endpointUrl, qs, flatten, fi
             resolve(body);
           }
 
+        } else if(resp.statusCode == 404){
+          resolve({});
+          
         } else {
           reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') getting '+entityName+'(s). Details:\n'+JSON.stringify(body) ));
         }
@@ -341,6 +344,9 @@ Hubspot.prototype._getEntities = function(entityName, endpointUrl, qs, flatten, 
           } else {
             resolve(body);
           }
+
+        } else if(resp.statusCode == 404){
+          resolve([]);
 
         } else {
           reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') getting '+entityName+'(s). Details:\n'+JSON.stringify(body) ));

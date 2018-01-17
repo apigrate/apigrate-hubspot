@@ -199,6 +199,25 @@ Hubspot.prototype.getContactProperty = function(name){
 };
 
 
+/**
+  Create a contact property
+  @param {object} toSave
+  @example
+  {
+    "name": "another_example_property",
+    "label": "Another Example Property",
+    "description": "Another property being created as an example.",
+    "groupName": "contactinfo",
+    "type": "string",
+    "fieldType": "text"
+  }
+*/
+Hubspot.prototype.createContactProperty = function(toSave){
+  var self = this;
+  return self._createEntity('Contact Property', '/properties/v1/contacts/properties', toSave);
+
+};
+
 // Contacts.....................................................................
 
 
@@ -308,7 +327,7 @@ Hubspot.prototype._getEntity = function(entityName, endpointUrl, qs, flatten, fi
 
         } else if(resp.statusCode == 404){
           resolve({});
-          
+
         } else {
           reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') getting '+entityName+'(s). Details:\n'+JSON.stringify(body) ));
         }

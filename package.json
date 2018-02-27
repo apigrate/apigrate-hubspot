@@ -18,7 +18,6 @@
   "homepage": "https://github.com/gaumeister/apigrate-hubspot#readme",
   "dependencies": {
     "lodash": "^4.17.4",
-    "moment": "^2.20.1",
     "request": "^2.83.0"
   }
 }

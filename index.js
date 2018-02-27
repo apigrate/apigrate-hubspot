@@ -6,7 +6,6 @@ var request = _rqr('request');
 function _rqr(lib){ return typeof $require != 'undefined' ? $require(lib) : require(lib); }
 function _exp(constr){ if(typeof $export != 'undefined'){ $export(null, constr); } else { module.exports=constr; } }
 
-var LOGGER = {info: console.log, error: console.error};
 
 /**
   A promise-based NodeJS connector for accessing the Hubspot API.
@@ -14,7 +13,7 @@ var LOGGER = {info: console.log, error: console.error};
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.1.3
+  @version 1.2.0
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -22,9 +21,11 @@ function Hubspot(hapikey, logger){
     qs:{ hapikey: hapikey},
     json: true
   });
-  if(logger){
-    LOGGER = logger;
+  if(!logger){
+    logger = {};
+    logger.debug = console.log;
   }
+  this.LOGGER = logger;
 }
 
 
@@ -157,6 +158,99 @@ Hubspot.prototype.getCompanyById = function(companyId, flatten){
 
 };
 
+/**
+  Creates a company for the given object.
+  @param toSave the company to save
+  @param splay if the company is a regular hashed object, set this to true to "splay out"
+  all the properties into a name-value pair array (which is what Hubspot wants).
+  @return an object representing the resultant company
+  @example
+  {
+    "portalId": 4230852,
+    "companyId": 713546382,
+    "isDeleted": false,
+    "properties": {
+      "hs_lastmodifieddate": {
+        "value": "1519689809762",
+        "timestamp": 1519689809762,
+        "source": "CALCULATED",
+        "sourceId": null,
+        "versions": [{
+          "name": "hs_lastmodifieddate",
+          "value": "1519689809762",
+          "timestamp": 1519689809762,
+          "source": "CALCULATED",
+          "sourceVid": []
+        }]
+      },
+      "name": {
+        "value": "Pollux IT",
+        "timestamp": 1519689809762,
+        "source": "API",
+        "sourceId": null,
+        "versions": [{
+          "name": "name",
+          "value": "Pollux IT",
+          "timestamp": 1519689809762,
+          "source": "API",
+          "sourceVid": []
+        }]
+      },
+      "description": {
+        "value": "Helping businesses stay on top of IT one project at a time.",
+        "timestamp": 1519689809762,
+        "source": "API",
+        "sourceId": null,
+        "versions": [{
+          "name": "description",
+          "value": "Helping businesses stay on top of IT one project at a time.",
+          "timestamp": 1519689809762,
+          "source": "API",
+          "sourceVid": []
+        }]
+      },
+      "createdate": {
+        "value": "1519689809762",
+        "timestamp": 1519689809762,
+        "source": "API",
+        "sourceId": "API",
+        "versions": [{
+          "name": "createdate",
+          "value": "1519689809762",
+          "timestamp": 1519689809762,
+          "sourceId": "API",
+          "source": "API",
+          "sourceVid": []
+        }]
+      }
+    },
+    "additionalDomains": [],
+    "stateChanges": [],
+    "mergeAudits": []
+  }
+
+*/
+Hubspot.prototype.createCompany = function(toSave, splay){
+  var self = this;
+
+  var saveThis = toSave;
+  if(splay){
+    saveThis = _splay(toSave);
+    self.LOGGER.debug('After splay %s', JSON.stringify(saveThis, null, 2));
+  }
+  return self._createEntity('Company', '/companies/v2/companies', saveThis);
+}
+
+Hubspot.prototype.updateCompany = function(companyId, toSave, splay){
+  var self = this;
+
+  var saveThis = toSave;
+  if(splay){
+    saveThis = _splay(toSave);
+  }
+  return self._updateEntity('Company', '/companies/v2/companies/'+encodeURIComponent(companyId), saveThis);
+}
+
 // Contact Property Groups......................................................
 
 
@@ -225,7 +319,6 @@ Hubspot.prototype.getContactProperty = function(name){
 Hubspot.prototype.createContactProperty = function(toSave){
   var self = this;
   return self._createEntity('Contact Property', '/properties/v1/contacts/properties', toSave);
-
 };
 
 // Contacts.....................................................................
@@ -310,6 +403,129 @@ Hubspot.prototype.getContactById = function(vid, flatten){
 
 };
 
+/**
+  Create a contact
+  @param {object} toSave
+  @param {boolean} splay when given an object hash, splay out the attributes into the
+  expected Hubspot properties notation.
+  @example of splayed format (after splay)
+  {
+  "properties": [
+    {
+      "property": "email",
+      "value": "testingapis@hubspot.com"
+    },
+    {
+      "property": "firstname",
+      "value": "Adrian"
+    },
+    {
+      "property": "lastname",
+      "value": "Mott"
+    },
+    {
+      "property": "website",
+      "value": "http://hubspot.com"
+    },
+    {
+      "property": "company",
+      "value": "HubSpot"
+    },
+    {
+      "property": "phone",
+      "value": "555-122-2323"
+    },
+    {
+      "property": "address",
+      "value": "25 First Street"
+    },
+    {
+      "property": "city",
+      "value": "Cambridge"
+    },
+    {
+      "property": "state",
+      "value": "MA"
+    },
+    {
+      "property": "zip",
+      "value": "02139"
+    }
+  ]
+  }
+*/
+Hubspot.prototype.createContact = function(toSave, splay){
+  var self = this;
+
+  var saveThis = toSave;
+  if(splay){
+    saveThis = _splay(toSave, 'property');
+  }
+  self.LOGGER.debug(JSON.stringify(saveThis,null,2))
+  return self._createEntity('Contact', '/contacts/v1/contact', saveThis);
+}
+
+Hubspot.prototype.updateContact = function(contactId, toSave, splay){
+  var self = this;
+
+  var saveThis = toSave;
+  if(splay){
+    saveThis = _splay(toSave, 'property');
+  }
+
+  return new Promise(function(resolve, reject){
+
+    //Uses POST, unlike some other updates...
+    return self.baseReq({method: 'POST', url: '/contacts/v1/contact/vid/'+encodeURIComponent(contactId)+'/profile', body: saveThis },
+    function(err, resp, body){
+      if(err){
+        reject(err);
+      } else {
+        if(resp.statusCode == 204){
+          if(body){
+            resolve(body);
+          } else {
+            resolve(resp);
+          }
+
+        } else {
+          reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') updating Contact. Details:\n'+JSON.stringify(body) ));
+        }
+      }
+    });
+  });
+
+}
+
+/**
+  Assigns a contact to a company. If contact is already assigned to another company
+   it will be moved.
+*/
+Hubspot.prototype.assignContactToCompany = function(contactId, companyId){
+  var self = this;
+
+  return new Promise(function(resolve, reject){
+
+    return self.baseReq({method: 'PUT', url: '/companies/v2/companies/'+encodeURIComponent(companyId)+'/contacts/'+encodeURIComponent(contactId)},
+    function(err, resp, body){
+      if(err){
+        reject(err);
+      } else {
+        if(resp.statusCode == 200){
+          if(body){
+            resolve(body);
+          } else {
+            resolve(resp);
+          }
+
+        } else {
+          reject(new Error('Hubspot Error assigning contact '+ contactId +' to company '+ companyId +'. Reason: '+ body.message+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
+        }
+      }
+    });
+  });
+
+};
 
 // Internal Functions...........................................................
 
@@ -339,7 +555,7 @@ Hubspot.prototype._getEntity = function(entityName, endpointUrl, qs, flatten, fi
           resolve({});
 
         } else {
-          reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') getting '+entityName+'(s). Details:\n'+JSON.stringify(body) ));
+          reject(new Error('Hubspot Error getting '+entityName+'. Reason: '+ body.message+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
         }
       }
     });
@@ -378,7 +594,7 @@ Hubspot.prototype._getEntities = function(entityName, endpointUrl, qs, flatten, 
           resolve([]);
 
         } else {
-          reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') getting '+entityName+'(s). Details:\n'+JSON.stringify(body) ));
+          reject(new Error('Hubspot Error getting '+entityName+'(s). Reason: '+ body.message+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
         }
       }
     });
@@ -407,13 +623,41 @@ Hubspot.prototype._createEntity = function(entityName, endpointUrl, toSave){
           }
 
         } else {
-          reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') creating '+entityName+'. Details:\n'+JSON.stringify(body) ));
+          reject(new Error('Hubspot Error creating '+entityName+'. Reason: '+ body.message+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
         }
       }
     });
   });
 };
 
+
+/**
+  Internal standard create handler for hubspot api calls.
+*/
+Hubspot.prototype._updateEntity = function(entityName, endpointUrl, toSave){
+  var self = this;
+  return new Promise(function(resolve, reject){
+
+    //PUT https://api.hubapi.com/companies/v2/companies/10444744?hapikey=demo
+    return self.baseReq({method: 'PUT', url: endpointUrl, body: toSave },
+    function(err, resp, body){
+      if(err){
+        reject(err);
+      } else {
+        if(resp.statusCode == 200){
+          if(body){
+            resolve(body);
+          } else {
+            resolve(resp);
+          }
+
+        } else {
+          reject(new Error('Hubspot Error updating '+entityName+'. Reason: '+ body.message+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
+        }
+      }
+    });
+  });
+};
 
 /**
   Given an array or an object, this method flattens the 'properties'
@@ -475,6 +719,40 @@ function _flattenResults(results, getEntitySpecificFields ){
   }
 }
 
+/**
+  Takes a hashed object and return an object with the properties splayed out
+  in an array of key-value-pair objects. For example:
+  {
+    "foo":"abc",
+    "bar":123
+  }
+  would become...
+  {
+    properties:[
+      {
+        name: "foo",
+        value: "abc",
+      },
+      {
+        name: "bar",
+        value: 123
+      }
+    ]
+  }
+*/
+function _splay(toSave, name){
+  var saveThis = {properties:[]};
+  if(!name) name = 'name';
+  _.each(toSave, function(v, k){
+    var prop = {};
+    prop[name] = k;
+    prop.value = v;
+    saveThis.properties.push(prop);
+  });
+  return saveThis;
+}
+
+
 function _getContactFields(src, target){
   target.vid = src.vid;
   target.canonicalVid = src['canonical-vid'];
@@ -496,6 +774,7 @@ function _getContactFields(src, target){
 function _getCompanyFields(src, target){
   target.companyId = src.companyId;
   target.isDeleted = src.isDeleted;
+  target.source = src.source;
 }
 
 _exp(Hubspot);

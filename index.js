@@ -13,7 +13,7 @@ function _exp(constr){ if(typeof $export != 'undefined'){ $export(null, constr);
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.2.1
+  @version 1.2.2
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -21,6 +21,7 @@ function Hubspot(hapikey, logger){
     qs:{ hapikey: hapikey},
     json: true
   });
+  this.hapikey = hapikey;
   if(!logger){
     //Don't break when no logger.
     logger = {};
@@ -56,7 +57,7 @@ Hubspot.prototype.createCompanyPropertyGroup = function(toSave){
 */
 Hubspot.prototype.getCompanyPropertyGroups = function(){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   return self._getEntities('Company Property Group', '/properties/v1/companies/groups/', qs, false );
 
 };
@@ -70,7 +71,7 @@ Hubspot.prototype.getCompanyPropertyGroups = function(){
 */
 Hubspot.prototype.getCompanyProperties = function(){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   return self._getEntities('Company Property', '/properties/v1/companies/properties', qs, false );
 
 };
@@ -79,7 +80,7 @@ Hubspot.prototype.getCompanyProperties = function(){
 Hubspot.prototype.getCompanyProperty = function(name){
   var self = this;
   var endpoint = '/properties/v1/companies/properties/named/'+name;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   return self._getEntity('Company Property', endpoint, qs, false);
 
 };
@@ -119,7 +120,7 @@ Hubspot.prototype.createCompanyProperty = function(toSave){
 */
 Hubspot.prototype.getRecentlyModifiedCompanies = function(offset, count, flatten){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   if(!_.isNil(offset)){ qs.offset = offset; }
   if(!_.isNil(count)){ qs.count = count; }
   return self._getEntities('Company', '/companies/v2/companies/recent/modified', qs, flatten, 'results', _getCompanyFields );
@@ -139,7 +140,7 @@ Hubspot.prototype.getRecentlyModifiedCompanies = function(offset, count, flatten
 */
 Hubspot.prototype.getRecentlyCreatedCompanies = function(offset, count, flatten){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey };
   if(!_.isNil(offset)){ qs.offset = offset; }
   if(!_.isNil(count)){ qs.count = count; }
   return self._getEntities('Company', '/companies/v2/companies/recent/created', qs, flatten, 'results', _getCompanyFields );
@@ -157,7 +158,7 @@ Hubspot.prototype.getRecentlyCreatedCompanies = function(offset, count, flatten)
 Hubspot.prototype.getCompanyById = function(companyId, flatten){
   var self = this;
   var endpoint = 'companies/v2/companies/'+companyId;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   if(_.isNil(companyId)){ return Promise.reject(new Error('A company id is required.')); }
   return self._getEntity('Company', endpoint, qs, flatten, _getCompanyFields);
 
@@ -279,7 +280,7 @@ Hubspot.prototype.createContactPropertyGroup = function(toSave){
 */
 Hubspot.prototype.getContactPropertyGroups = function(){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   return self._getEntities('Contact Property Group', '/properties/v1/contacts/groups', qs, false );
 
 };
@@ -293,7 +294,7 @@ Hubspot.prototype.getContactPropertyGroups = function(){
 */
 Hubspot.prototype.getContactProperties = function(){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   return self._getEntities('Contact Property', '/properties/v1/contacts/properties', qs, false );
 
 };
@@ -302,7 +303,7 @@ Hubspot.prototype.getContactProperties = function(){
 Hubspot.prototype.getContactProperty = function(name){
   var self = this;
   var endpoint = '/properties/v1/contacts/properties/named/'+name;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   return self._getEntity('Contact Property', endpoint, qs, false);
 
 };
@@ -341,7 +342,7 @@ Hubspot.prototype.createContactProperty = function(toSave){
 */
 Hubspot.prototype.getRecentlyModifiedContacts = function(offset, count, flatten){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   if(!_.isNil(offset)){ qs.offset = offset; }
   if(!_.isNil(count)){ qs.count = count; }
   return self._getEntities('Contact', '/contacts/v1/lists/recently_updated/contacts/recent', qs, flatten, 'contacts', _getContactFields);
@@ -361,7 +362,7 @@ Hubspot.prototype.getRecentlyModifiedContacts = function(offset, count, flatten)
 */
 Hubspot.prototype.getRecentlyCreatedContacts = function(offset, count, flatten){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   if(!_.isNil(offset)){ qs.offset = offset; }
   if(!_.isNil(count)){ qs.count = count; }
   return self._getEntities('Contact', '/contacts/v1/lists/all/contacts/recent', qs, flatten, 'contacts', _getContactFields);
@@ -383,7 +384,7 @@ Hubspot.prototype.getRecentlyCreatedContacts = function(offset, count, flatten){
 */
 Hubspot.prototype.searchContacts = function(searchTerm, offset, count, flatten){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   if(_.isNil(searchTerm)){ return Promise.reject(new Error('A search term is required for searching contacts.')); } else { qs.q = searchTerm; }
   if(!_.isNil(offset)){ qs.offset = offset; }
   if(!_.isNil(count)){ qs.count = count; }
@@ -401,7 +402,7 @@ Hubspot.prototype.searchContacts = function(searchTerm, offset, count, flatten){
 */
 Hubspot.prototype.getContactById = function(vid, flatten){
   var self = this;
-  var qs = {};
+  var qs = { hapikey: self.hapikey};
   if(_.isNil(vid)){ Promise.reject(new Error('A contact id is required.')); }
   var endpoint = 'contacts/v1/contact/vid/'+vid+'/profile';
   return self._getEntity('Contact', endpoint, qs, flatten, _getContactFields);
@@ -642,8 +643,6 @@ Hubspot.prototype._createEntity = function(entityName, endpointUrl, toSave){
 Hubspot.prototype._updateEntity = function(entityName, endpointUrl, toSave){
   var self = this;
   return new Promise(function(resolve, reject){
-
-    //PUT https://api.hubapi.com/companies/v2/companies/10444744?hapikey=demo
     return self.baseReq({method: 'PUT', url: endpointUrl, body: toSave },
     function(err, resp, body){
       if(err){

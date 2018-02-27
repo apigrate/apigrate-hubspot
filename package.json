@@ -1,6 +1,6 @@
 {
   "name": "@apigrate/hubspot",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Hubspot API NodeJS library by Apigrate",
   "main": "index.js",
   "scripts": {

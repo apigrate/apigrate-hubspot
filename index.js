@@ -13,7 +13,7 @@ function _exp(constr){ if(typeof $export != 'undefined'){ $export(null, constr);
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.2.0
+  @version 1.2.1
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -22,8 +22,13 @@ function Hubspot(hapikey, logger){
     json: true
   });
   if(!logger){
+    //Don't break when no logger.
     logger = {};
-    logger.debug = console.log;
+    logger.error = console.error;
+    logger.warn = console.warn;
+    logger.info = function(){};
+    logger.debug = function(){};
+    logger.silly = function(){};
   }
   this.LOGGER = logger;
 }

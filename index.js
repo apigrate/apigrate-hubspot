@@ -13,7 +13,7 @@ function _exp(constr){ if(typeof $export != 'undefined'){ $export(null, constr);
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.2.2
+  @version 1.3.0
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -167,73 +167,9 @@ Hubspot.prototype.getCompanyById = function(companyId, flatten){
 /**
   Creates a company for the given object.
   @param toSave the company to save
-  @param splay if the company is a regular hashed object, set this to true to "splay out"
-  all the properties into a name-value pair array (which is what Hubspot wants).
-  @return an object representing the resultant company
-  @example
-  {
-    "portalId": 4230852,
-    "companyId": 713546382,
-    "isDeleted": false,
-    "properties": {
-      "hs_lastmodifieddate": {
-        "value": "1519689809762",
-        "timestamp": 1519689809762,
-        "source": "CALCULATED",
-        "sourceId": null,
-        "versions": [{
-          "name": "hs_lastmodifieddate",
-          "value": "1519689809762",
-          "timestamp": 1519689809762,
-          "source": "CALCULATED",
-          "sourceVid": []
-        }]
-      },
-      "name": {
-        "value": "Pollux IT",
-        "timestamp": 1519689809762,
-        "source": "API",
-        "sourceId": null,
-        "versions": [{
-          "name": "name",
-          "value": "Pollux IT",
-          "timestamp": 1519689809762,
-          "source": "API",
-          "sourceVid": []
-        }]
-      },
-      "description": {
-        "value": "Helping businesses stay on top of IT one project at a time.",
-        "timestamp": 1519689809762,
-        "source": "API",
-        "sourceId": null,
-        "versions": [{
-          "name": "description",
-          "value": "Helping businesses stay on top of IT one project at a time.",
-          "timestamp": 1519689809762,
-          "source": "API",
-          "sourceVid": []
-        }]
-      },
-      "createdate": {
-        "value": "1519689809762",
-        "timestamp": 1519689809762,
-        "source": "API",
-        "sourceId": "API",
-        "versions": [{
-          "name": "createdate",
-          "value": "1519689809762",
-          "timestamp": 1519689809762,
-          "sourceId": "API",
-          "source": "API",
-          "sourceVid": []
-        }]
-      }
-    },
-    "additionalDomains": [],
-    "stateChanges": [],
-    "mergeAudits": []
-  }
+  @param {boolean} splay indicates the toSave entity needs to be "splayed out"
+  into the hubspot name-value-pair format. When true, any returned object will be
+  "unsplayed" (i.e. flattened) to maintain consistency with the caller.
 
 */
 Hubspot.prototype.createCompany = function(toSave, splay){
@@ -244,9 +180,29 @@ Hubspot.prototype.createCompany = function(toSave, splay){
     saveThis = _splay(toSave);
     self.LOGGER.debug('After splay %s', JSON.stringify(saveThis, null, 2));
   }
-  return self._createEntity('Company', '/companies/v2/companies', saveThis);
+  return self._createEntity('Company', '/companies/v2/companies', saveThis)
+  .then(function(result){
+    if(splay){
+      return Promise.resolve(_flattenResults(result, _getCompanyFields));
+    } else {
+  	  return Promise.resolve(result);
+    }
+  })
+  .catch(function(err){
+  	return Promise.reject(err);
+  });
+
 }
 
+
+/**
+
+  @param {integer} companyId
+  @param {object} toSave
+  @param {boolean} splay indicates the toSave entity needs to be "splayed out"
+  into the hubspot name-value-pair format. When true, any returned object will be
+  "unsplayed" (i.e. flattened) to maintain consistency with the caller.
+*/
 Hubspot.prototype.updateCompany = function(companyId, toSave, splay){
   var self = this;
 
@@ -254,7 +210,17 @@ Hubspot.prototype.updateCompany = function(companyId, toSave, splay){
   if(splay){
     saveThis = _splay(toSave);
   }
-  return self._updateEntity('Company', '/companies/v2/companies/'+encodeURIComponent(companyId), saveThis);
+  return self._updateEntity('Company', '/companies/v2/companies/'+encodeURIComponent(companyId), saveThis)
+  .then(function(result){
+    if(splay){
+      return Promise.resolve(_flattenResults(result, _getCompanyFields));
+    } else {
+  	  return Promise.resolve(result);
+    }
+  })
+  .catch(function(err){
+  	return Promise.reject(err);
+  });
 }
 
 // Contact Property Groups......................................................
@@ -412,53 +378,9 @@ Hubspot.prototype.getContactById = function(vid, flatten){
 /**
   Create a contact
   @param {object} toSave
-  @param {boolean} splay when given an object hash, splay out the attributes into the
-  expected Hubspot properties notation.
-  @example of splayed format (after splay)
-  {
-  "properties": [
-    {
-      "property": "email",
-      "value": "testingapis@hubspot.com"
-    },
-    {
-      "property": "firstname",
-      "value": "Adrian"
-    },
-    {
-      "property": "lastname",
-      "value": "Mott"
-    },
-    {
-      "property": "website",
-      "value": "http://hubspot.com"
-    },
-    {
-      "property": "company",
-      "value": "HubSpot"
-    },
-    {
-      "property": "phone",
-      "value": "555-122-2323"
-    },
-    {
-      "property": "address",
-      "value": "25 First Street"
-    },
-    {
-      "property": "city",
-      "value": "Cambridge"
-    },
-    {
-      "property": "state",
-      "value": "MA"
-    },
-    {
-      "property": "zip",
-      "value": "02139"
-    }
-  ]
-  }
+  @param {boolean} splay indicates the toSave entity needs to be "splayed out"
+  into the hubspot name-value-pair format. When true, any returned object will be
+  "unsplayed" (i.e. flattened) to maintain consistency with the caller.
 */
 Hubspot.prototype.createContact = function(toSave, splay){
   var self = this;
@@ -468,9 +390,30 @@ Hubspot.prototype.createContact = function(toSave, splay){
     saveThis = _splay(toSave, 'property');
   }
   self.LOGGER.debug(JSON.stringify(saveThis,null,2))
-  return self._createEntity('Contact', '/contacts/v1/contact', saveThis);
+
+  return self._createEntity('Contact', '/contacts/v1/contact', saveThis)
+  .then(function(result){
+    if(splay){
+      return Promise.resolve(_flattenResults(result, _getContactFields));
+    } else {
+  	  return Promise.resolve(result);
+    }
+  })
+  .catch(function(err){
+  	return Promise.reject(err);
+  });
 }
 
+/**
+
+  Updates a contact. Note that this method does NOT return the contact after update. You need to
+  fetch it by id again to get calculated fields if needed.
+  @param {integer} contactId
+  @param {object} toSave
+  @param {boolean} splay indicates the toSave entity needs to be "splayed out"
+  into the hubspot name-value-pair format. When true, any returned object will be
+  "unsplayed" (i.e. flattened) to maintain consistency with the caller.
+*/
 Hubspot.prototype.updateContact = function(contactId, toSave, splay){
   var self = this;
 
@@ -488,11 +431,8 @@ Hubspot.prototype.updateContact = function(contactId, toSave, splay){
         reject(err);
       } else {
         if(resp.statusCode == 204){
-          if(body){
-            resolve(body);
-          } else {
-            resolve(resp);
-          }
+          //No body will be present per api spec.
+          resolve(resp);
 
         } else {
           reject(new Error('Hubspot Error (HTTP '+resp.statusCode+') updating Contact. Details:\n'+JSON.stringify(body) ));

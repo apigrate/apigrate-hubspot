@@ -13,7 +13,7 @@ function _exp(constr){ if(typeof $export != 'undefined'){ $export(null, constr);
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.3.0
+  @version 1.3.1
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -369,7 +369,7 @@ Hubspot.prototype.searchContacts = function(searchTerm, offset, count, flatten){
 Hubspot.prototype.getContactById = function(vid, flatten){
   var self = this;
   var qs = { hapikey: self.hapikey};
-  if(_.isNil(vid)){ Promise.reject(new Error('A contact id is required.')); }
+  if(_.isNil(vid)){ return Promise.reject(new Error('A contact id is required.')); }
   var endpoint = 'contacts/v1/contact/vid/'+vid+'/profile';
   return self._getEntity('Contact', endpoint, qs, flatten, _getContactFields);
 
@@ -711,7 +711,7 @@ function _getContactFields(src, target){
     target.formSubmissions = src['form-submissions'];
   }
   if(!_.isNil(src['associated-company'])){
-    target.formSubmissions = src['associated-company'];
+    target.company = src['associated-company'];
   }
 }
 

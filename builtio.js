@@ -13,8 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-const _ = require('lodash');
-var request = require('request');
+const _ = $require('lodash');
+var request = $require('request');
+
 
 /**
   A promise-based NodeJS connector for accessing the Hubspot API.
@@ -34,8 +35,8 @@ function Hubspot(hapikey, logger){
   if(!logger){
     //Don't break when no logger.
     logger = {};
-    logger.error = console.error;
-    logger.warn = console.warn;
+    logger.error = $log;
+    logger.warn = $log;
     logger.info = function(){};
     logger.debug = function(){};
     logger.silly = function(){};
@@ -730,4 +731,4 @@ function _getCompanyFields(src, target){
   target.source = src.source;
 }
 
-module.exports=Hubspot;
+$export(null, Hubspot);

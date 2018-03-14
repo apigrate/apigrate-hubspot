@@ -22,7 +22,7 @@ var request = require('request');
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.3.1
+  @version 1.3.2
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({

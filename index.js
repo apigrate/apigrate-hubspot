@@ -22,7 +22,7 @@ var request = require('request');
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.3.2
+  @version 1.4.0
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -116,6 +116,29 @@ Hubspot.prototype.createCompanyProperty = function(toSave){
 
 
 // Companies....................................................................
+
+/**
+  Gets all companies from Hubspot.
+  @param {integer} offset This is used to get the next page of results.
+  Each request will return an offset in the response. Use that offset in the
+  URL of your next request to get the next page of results.
+  @param {integer} limit # objects to return (max 250)
+  @param {array} properties array of property names to include in the response.
+  If excluded, only the company id will be returned.
+  @param {boolean} flatten optional parameter indicating whether to flatten the
+  property output and just return simple objects containing the current values
+  (defaults to true).
+
+*/
+Hubspot.prototype.getAllCompanies = function(offset, limit, properties, flatten){
+  var self = this;
+  var qs = { hapikey: self.hapikey};
+  if(!_.isNil(offset)){ qs.offset = offset; }
+  if(!_.isNil(limit)){ qs.limit = limit; }
+  if(!_.isNil(properties)){ qs.properties = properties; }
+  return self._getEntities('Company', '/companies/v2/companies/paged', qs, flatten, 'companies', _getCompanyFields );
+
+};
 
 /**
   Gets the most recently modified companies from Hubspot.
@@ -497,6 +520,7 @@ Hubspot.prototype._getEntity = function(entityName, endpointUrl, qs, flatten, fi
       if(err){
         reject(err);
       } else {
+        self.LOGGER.silly('Raw Response: %s', JSON.stringify(body));
 
         if(resp.statusCode == 200){
           if(_.isNil(flatten) || flatten){
@@ -525,17 +549,19 @@ Hubspot.prototype._getEntities = function(entityName, endpointUrl, qs, flatten, 
   var self = this;
   return new Promise(function(resolve, reject){
 
-    self.baseReq({method: 'GET', url: endpointUrl, qs: qs },
+    self.baseReq({method: 'GET', url: endpointUrl, qs: qs, useQuerystring: true, qsStringifyOptions: { arrayFormat: 'repeat' } },
     function(err, resp, body){
       if(err){
         reject(err);
       } else {
+        self.LOGGER.silly('Raw Response: %s', JSON.stringify(body));
 
         if(resp.statusCode == 200){
           if(_.isNil(flatten) || flatten){
             var result = {};
             if(body){
               if(body.hasMore){ result.hasMore = body.hasMore; }
+              if(body['has-more']){ result.hasMore = body['has-more']; }
               if(body.offset){ result.offset = body.offset; }
               if(body.total){ result.total = body.total; }
               result.results = _flattenResults(body[collectionName], fieldFct);
@@ -570,6 +596,8 @@ Hubspot.prototype._createEntity = function(entityName, endpointUrl, toSave){
       if(err){
         reject(err);
       } else {
+        self.LOGGER.silly('Raw Response: %s', JSON.stringify(body))
+
         if(resp.statusCode == 200){
           if(body){
             resolve(body);
@@ -597,6 +625,8 @@ Hubspot.prototype._updateEntity = function(entityName, endpointUrl, toSave){
       if(err){
         reject(err);
       } else {
+        self.LOGGER.silly('Raw Response: %s', JSON.stringify(body))
+
         if(resp.statusCode == 200){
           if(body){
             resolve(body);

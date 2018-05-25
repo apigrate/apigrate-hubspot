@@ -22,7 +22,7 @@ var request = require('request');
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.4.0
+  @version 1.5.0
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -176,6 +176,30 @@ Hubspot.prototype.getRecentlyCreatedCompanies = function(offset, count, flatten)
   if(!_.isNil(offset)){ qs.offset = offset; }
   if(!_.isNil(count)){ qs.count = count; }
   return self._getEntities('Company', '/companies/v2/companies/recent/created', qs, flatten, 'results', _getCompanyFields );
+
+};
+
+
+Hubspot.prototype.getCompaniesByDomain = function(domain, offset, limit, flatten){
+  var self = this;
+  var qs = { hapikey: self.hapikey };
+  //if(!_.isNil(offset)){ qs.offset = offset; }
+  //if(!_.isNil(limit)){ qs.limit = limit; }
+  return self._getEntitiesByPost('Company', `/companies/v2/domains/${domain}/companies`, qs, {
+    limit: limit || 1,
+    requestOptions: {
+      properties: [
+        "domain",
+        "createdate",
+        "name",
+        "hs_lastmodifieddate"
+      ]
+    },
+    offset: {
+      isPrimary: true,
+      companyId: offset || 0
+    }
+  }, flatten, 'results', _getCompanyFields );
 
 };
 
@@ -575,7 +599,45 @@ Hubspot.prototype._getEntities = function(entityName, endpointUrl, qs, flatten, 
           resolve([]);
 
         } else {
-          reject(new Error('Hubspot Error getting '+entityName+'(s). Reason: '+ body.message+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
+          reject(new Error('Hubspot Error getting '+entityName+'(s). Reason: '+ (body ? body.message : resp.body)+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
+        }
+      }
+    });
+  });
+};
+
+
+Hubspot.prototype._getEntitiesByPost = function(entityName, endpointUrl, qs, payload, flatten, collectionName, fieldFct){
+  var self = this;
+  return new Promise(function(resolve, reject){
+
+    self.baseReq({method: 'POST', url: endpointUrl, qs: qs, useQuerystring: true, qsStringifyOptions: { arrayFormat: 'repeat' }, body: payload, json: true },
+    function(err, resp, body){
+      if(err){
+        reject(err);
+      } else {
+        self.LOGGER.silly('Raw Response: %s', JSON.stringify(body));
+
+        if(resp.statusCode == 200){
+          if(_.isNil(flatten) || flatten){
+            var result = {};
+            if(body){
+              if(body.hasMore){ result.hasMore = body.hasMore; }
+              if(body['has-more']){ result.hasMore = body['has-more']; }
+              if(body.offset){ result.offset = body.offset; }
+              if(body.total){ result.total = body.total; }
+              result.results = _flattenResults(body[collectionName], fieldFct);
+            }
+            resolve(result);
+          } else {
+            resolve(body);
+          }
+
+        } else if(resp.statusCode == 404){
+          resolve([]);
+
+        } else {
+          reject(new Error('Hubspot Error getting '+entityName+'(s). Reason: '+ (body ? body.message : resp.body)+'. \nHTTP '+resp.statusCode+' \n'+JSON.stringify(body) ));
         }
       }
     });

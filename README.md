@@ -39,6 +39,7 @@ Hubspot API NodeJS library by Apigrate
 1. getRecentlyCreatedContacts
 1. getRecentlyModifiedContacts
 1. searchContacts
+1. getAllContacts
 1. getContactById
 1. createContact
 1. updateContact

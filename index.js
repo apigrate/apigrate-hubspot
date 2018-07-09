@@ -22,7 +22,7 @@ var request = require('request');
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.5.0
+  @version 1.6.0
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -416,6 +416,37 @@ Hubspot.prototype.searchContacts = function(searchTerm, offset, count, flatten){
 
 
 /**
+  Returns all contacts given the corresponding offset and count.
+  @param {integer} offset This is used to get the next page of results.
+  Each request will return an `offset` and `hasMore` in the response. Use the
+  `hasMore` boolean to determine whether there are more entiteis to get, and
+  use the `offset` to get the next page of results (vids > than the offset
+  will be returned).
+  @param {integer} count objects to return (defaults to 20, and 100 is the max)
+  @param {array} properties the names of properties to include in the response
+  @param {boolean} flatten optional parameter indicating whether to flatten the
+  property output and just return simple objects containing the current values
+  (defaults to true).
+*/
+Hubspot.prototype.getAllContacts = function(offset, count, properties, flatten){
+  var self = this;
+  var qs = { hapikey: self.hapikey};
+  if(!_.isNil(offset)){ qs.vidOffset = offset; }
+  if(!_.isNil(count)){ qs.count = count; }
+  var url = '/contacts/v1/lists/all/contacts/all'
+  if(!_.isNil(properties)){
+    //manually add these to the url.
+    var qstring = ''
+    _.each(properties, function(p){
+      qstring+='&property='+encodeURIComponent(p);
+    })
+    url = url + '?' + qstring;
+  }
+  return self._getEntities('Contact', url, qs, flatten, 'contacts', _getContactFields);
+};
+
+
+/**
   Gets a contact by its id.
   @param {string} vid The contact id.
   @param {boolean} flatten optional parameter indicating whether to flatten the
@@ -586,7 +617,10 @@ Hubspot.prototype._getEntities = function(entityName, endpointUrl, qs, flatten, 
             if(body){
               if(body.hasMore){ result.hasMore = body.hasMore; }
               if(body['has-more']){ result.hasMore = body['has-more']; }
+
               if(body.offset){ result.offset = body.offset; }
+              if(body['vid-offset']){ result.offset = body['vid-offset']; }
+
               if(body.total){ result.total = body.total; }
               result.results = _flattenResults(body[collectionName], fieldFct);
             }

@@ -22,7 +22,7 @@ var request = require('request');
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.6.0
+  @version 1.7.0
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -361,13 +361,20 @@ Hubspot.prototype.createContactProperty = function(toSave){
   @param {boolean} flatten optional parameter indicating whether to flatten the
   property output and just return simple objects containing the current values
   (defaults to true).
+  @param {array} include_properties array of names of the contact properties to include (note: "associatedcompanyid" is always included)
 */
-Hubspot.prototype.getRecentlyModifiedContacts = function(offset, count, flatten){
+Hubspot.prototype.getRecentlyModifiedContacts = function(offset, count, flatten, include_properties){
   var self = this;
-  var qs = { hapikey: self.hapikey};
+  var qs = { hapikey: self.hapikey };
+  let temp = '?property=associatedcompanyid';
+  if(include_properties){
+    _.each(include_properties, function(prop){
+      temp += `&property=${prop}`
+    });
+  }
   if(!_.isNil(offset)){ qs.offset = offset; }
   if(!_.isNil(count)){ qs.count = count; }
-  return self._getEntities('Contact', '/contacts/v1/lists/recently_updated/contacts/recent', qs, flatten, 'contacts', _getContactFields);
+  return self._getEntities('Contact', `/contacts/v1/lists/recently_updated/contacts/recent${temp}`, qs, flatten, 'contacts', _getContactFields);
 
 };
 
@@ -836,6 +843,7 @@ function _getContactFields(src, target){
   target.vid = src.vid;
   target.canonicalVid = src['canonical-vid'];
   target.isContact = src['is-contact'];
+  target.companyId = src['associatedcompanyid'];
   if(!_.isNil(src['identity-profiles'])){
     target.identityProfiles = src['identity-profiles'];
   }

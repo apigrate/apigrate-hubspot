@@ -22,7 +22,7 @@ var request = require('request');
 
   @param {string} hapikey granting access to the Hubspot API.
   @param {object} logger an optional logger that has a .info(msg) and .error(msg) method
-  @version 1.7.0
+  @version 1.8.0
 */
 function Hubspot(hapikey, logger){
   this.baseReq = request.defaults({
@@ -468,6 +468,24 @@ Hubspot.prototype.getContactById = function(vid, flatten){
   return self._getEntity('Contact', endpoint, qs, flatten, _getContactFields);
 
 };
+
+
+/**
+  Gets a contact by email.
+  @param {string} email The contact email address.
+  @param {boolean} flatten optional parameter indicating whether to flatten the
+  property output and just return simple objects containing the current values
+  (defaults to true).
+*/
+Hubspot.prototype.getContactByEmail = function(email, flatten){
+  var self = this;
+  var qs = { hapikey: self.hapikey};
+  if(_.isNil(email)){ return Promise.reject(new Error('An email is required.')); }
+  var endpoint = 'contacts/v1/contact/email/'+email+'/profile';
+  return self._getEntity('Contact', endpoint, qs, flatten, _getContactFields);
+
+};
+
 
 /**
   Create a contact

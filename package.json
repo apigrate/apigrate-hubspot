@@ -1,6 +1,6 @@
 {
   "name": "@apigrate/hubspot",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Hubspot API NodeJS library by Apigrate",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/gaumeister/apigrate-hubspot#readme",
   "dependencies": {
-    "lodash": "^4.17.10",
-    "request": "^2.87.0"
+    "lodash": "^4.17.14",
+    "request": "^2.88.0"
   }
 }
